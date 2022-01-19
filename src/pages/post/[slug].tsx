@@ -1,10 +1,10 @@
 import { GetStaticPaths, GetStaticProps } from 'next';
-import Prismic from '@prismicio/client';
-import { RichText } from 'prismic-dom';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { RichText } from 'prismic-dom';
 import { FiCalendar, FiClock, FiUser } from 'react-icons/fi';
-import Head from 'next/head';
+import { ptBR } from 'date-fns/locale';
+import { useRouter } from 'next/router';
+import Prismic from '@prismicio/client';
 import Link from 'next/link';
 import Header from '../../components/Header';
 
@@ -12,7 +12,6 @@ import { getPrismicClient } from '../../services/prismic';
 
 import commonStyles from '../../styles/common.module.scss';
 import styles from './post.module.scss';
-import { useRouter } from 'next/router';
 import Comments from '../../components/Comments';
 
 interface Post {
@@ -52,7 +51,16 @@ interface PostProps {
   preview: boolean;
 }
 
-export default function Post({ post, navigation, preview }: PostProps) {
+export default function Post({
+  post,
+  navigation,
+  preview,
+}: PostProps): JSX.Element {
+  const router = useRouter();
+  if (router.isFallback) {
+    return <h1>Carregando...</h1>;
+  }
+
   const totalWords = post.data.content.reduce((total, contentItem) => {
     total += contentItem.heading.split(' ').length;
 
@@ -61,12 +69,6 @@ export default function Post({ post, navigation, preview }: PostProps) {
     return total;
   }, 0);
   const readTime = Math.ceil(totalWords / 200);
-
-  const router = useRouter();
-
-  if(router.isFallback) {
-    return <h1>Carregando...</h1>;
-  }
 
   const formatedDate = format(
     new Date(post.first_publication_date),
@@ -92,9 +94,6 @@ export default function Post({ post, navigation, preview }: PostProps) {
 
   return (
     <>
-      <Head>
-        <title>{`${post.data.title} | spacetraveling`}</title>
-      </Head>
       <Header />
       <img src={post.data.banner.url} alt="imagem" className={styles.banner} />
       <main className={commonStyles.container}>
@@ -115,7 +114,7 @@ export default function Post({ post, navigation, preview }: PostProps) {
                 {`${readTime} min`}
               </li>
             </ul>
-            {isPostEdited && <span>{editionDate}</span>}
+            <span>{isPostEdited && editionDate}</span>
           </div>
 
           {post.data.content.map(content => {
@@ -184,7 +183,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
   return {
     paths,
     fallback: true,
-  }
+  };
 };
 
 export const getStaticProps: GetStaticProps = async ({
